@@ -1,0 +1,15 @@
+version: 1
+frontend:
+  phases:
+    build:
+      commands:
+        - ./infra/client/build-client-ci.sh
+  artifacts:
+    baseDirectory: build
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - quadratic-client/node_modules/**/*
+      - quadratic-core/target/**/*
