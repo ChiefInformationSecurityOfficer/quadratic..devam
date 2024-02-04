@@ -1,71 +1,61 @@
-![E2E Tests](https://github.com/quadratichq/quadratic/actions/workflows/test-e2e.yml/badge.svg) ![Python Tests](https://github.com/quadratichq/quadratic/actions/workflows/test-python.yml/badge.svg) ![Unit Tests](https://github.com/quadratichq/quadratic/actions/workflows/test-unit.yml/badge.svg)
-![Twitter Follow](https://img.shields.io/twitter/follow/QuadraticHQ)
-![quadraticlogo4 1](https://user-images.githubusercontent.com/3479421/162037216-2fea1620-2310-4cfa-96fb-31299195e3a9.png)
+# Quadratic Core
 
-## ![quadratic icon small](https://user-images.githubusercontent.com/3479421/162039117-02f85f2c-e382-4ed8-ac39-64efab17a144.svg) **_The data science spreadsheet_**
+This contains the Rust code that powers Quadratic's client via WASM.
 
-Infinite data grid with Python, JavaScript, and SQL built-in. Data Connectors to pull in your data.
+## Formula function documentation
 
-Take your data and do something useful with it as quickly and easily as possible!
+Documentation for formula functions can be found in next to the Rust implementation of each function, in `src/formulas/functions/*.rs`. (`mod.rs` and `util.rs` do not contain any functions.)
 
-<img width="1552" alt="Quadratic in a standalone macOS window; on the left is a table of stock prices, and on the right is a code editor containing Python code to fetch the stock prices from Polygon's API" src="https://user-images.githubusercontent.com/3479421/221301059-921ad96a-878e-4082-b3b9-e55a54185c5d.png">
+### Rebuilding formula function documentation
 
-## Online demo
+Run `cargo run --bin docgen`, then copy/paste from `formula_docs_output.md` into Notion. Copying from VSCode will include formatting, so you may have to first paste it into a plaintext editor like Notepad, then copy/paste from there into Notion.
 
-We have a hosted version of the `main` branch available online.
+## Code Coverage
 
-**Try it out! ⟶ <https://app.quadratichq.com>**
+Code coverage tooling has been added to the npm scripts.  Before running, install dependencies:
 
-## Community
+```shell
+cargo install grcov
+rustup component add llvm-tools-preview
+```
 
-Join the conversation on our Discord channel ⟶ <https://discord.gg/quadratic>
+To generate the LLVM profraw files, run the following from the root:
 
-## Documentation
+```shell
+npm run coverage:wasm:gen
+```
 
-Read the documentation ⟶ <https://docs.quadratichq.com>
+Once the profraw files are generated, you can generate and view HTML by running the following from the root:
 
-# What is Quadratic?
+```shell
+npm run coverage:wasm:html
+npm run coverage:wasm:view
+```
 
-Quadratic is a Web-based spreadsheet application that runs in the browser and as a native app (via Electron).
+## Running benchmarks
 
-Our goal is to build a spreadsheet that enables you to pull your data from its source (SaaS, Database, CSV, API, etc) and then work with that data using the most popular data science tools today (Python, Pandas, SQL, JS, Excel Formulas, etc).
+### Pure Rust benchmark
 
-Quadratic has no environment to configure. The grid runs entirely in the browser with no backend service. This makes our grids completely portable and very easy to share.
+To run benchmarks in pure compiled Rust, run `cargo bench`
 
-## What can I do with Quadratic?
+### WASM benchmarks
 
-- Build dashboards
-- Create internal tools in minutes
-- Quickly mix data from different sources
-- Explore your data for new insights
+1. `rustup target add wasm32-wasi`
+2. `cargo install cargo-wasi`
+3. `cargo wasi build --bench=grid_benchmark --release --no-default-features`
+4. ``cp target/wasm32-wasi/release/deps/grid_benchmark-*.wasm .``
+5. `ls`
+6. There should be three WASM files (perhaps more if you have done prior builds). Ignore the ones with `.rustc.wasm` and `.wasi.wasm`. Rename the remaining `.wasm` file to `benchmark.wasm`.
 
-## Development progress and roadmap
+We include `--no-default-features` specifically to disable the `js` feature of `quadratic-core`, because the benchmark suite uses only WASI APIs and cannot depend on JS.
 
-_Quadratic is in ALPHA. For now, we do not recommend relying on Quadratic._
+To run in NodeJS:
 
-- [x] WebGL Grid (pinch and zoom grid)
-- [x] Open and Save files locally
-- [x] Python, Pandas Support (WASM)
-- [x] Excel Formula Support (in progress)
-- [x] Cell Formatting (issue [#44](https://github.com/quadratichq/quadratic/issues/44))
-- [x] Undo / Redo (issue [#42](https://github.com/quadratichq/quadratic/issues/42))
-- [ ] Multiplayer Support
-- [x] Charts and Graphs
-- [ ] SQL Database Support
-- [ ] AI Auto Complete
+1. `npm install -g @wasmer/cli`
+2. `wasmer-js run --dir=. benchmark.wasm -- --bench`
 
-**Feature request or bug report?** Submit a [Github Issue](https://github.com/quadratichq/quadratic/issues/new/choose/).
+To run in browser:
 
-**Want to contribute?** Read our [Contribution Guide](./CONTRIBUTING.md).
-
-Want to learn more about how Quadratic works? Read the [How Quadratic Works](./docs/how_quadratic_works.md) doc.
-
-## Examples
-
-There are more example files are in the application file menu. File → Open sample
-
-You can download them and then open them in Quadratic via File → Open Grid
-
-## Quadratic is hiring
-
-Check out our open roles ⟶ [careers.quadratichq.com](https://careers.quadratichq.com)
+1. Go to <https://webassembly.sh/>
+2. Drag `benchmark.wasm` into the browser window
+3. In the browser, `benchmark --bench | download`
